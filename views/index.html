@@ -182,11 +182,11 @@
     //////////=========모두에게 메세지 보내기
     document.querySelector('#send').addEventListener('click',()=>{
     if (socket.readyState === socket.OPEN) { // 연결 여부 체크 
-      const msg = document.querySelector('#msg').value;
+      const msg = document.querySelector('#msg');
       if(msg!=''){
         const nick = document.querySelector('#nick').value;
-        socket.send(JSON.stringify({ type:1,nick:nick, msg:msg})); // 데이터 전송 } 
-        document.querySelector('#msg').value='';
+        socket.send(JSON.stringify({ type:1,nick:nick, msg:msg.value})); // 데이터 전송 } 
+        msg.value=""
       }
     }else{
       alert('소켓 서버 없음')

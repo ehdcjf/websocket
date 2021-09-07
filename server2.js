@@ -77,11 +77,13 @@ webSocketServer.on('connection', (ws, req) => {
     if (dltuser != undefined) {
       nick = dltuser.nick;
     }
-    const port = ws._socket._peername.port;
-    user = user.filter(v => v.port != ws._socket._peername.port)
-    webSocketServer.clients.forEach((client) => {
-      client.send(JSON.stringify({ port: port, nick: nick, type: 'EndChat' }));
-    })
+    if(nick!=undefined){
+      const port = ws._socket._peername.port;
+      user = user.filter(v => v.port != ws._socket._peername.port)
+      webSocketServer.clients.forEach((client) => {
+        client.send(JSON.stringify({ port: port, nick: nick, type: 'EndChat' }));
+      })
+    }
   })
 
 
