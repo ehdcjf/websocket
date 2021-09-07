@@ -55,10 +55,6 @@ webSocketServer.on('connection', (ws, req) => {
         }
       })
     }
-
-
-
-
     else if (type == 1) {
       console.log(ws._socket._peername)
       webSocketServer.clients.forEach((client) => {
@@ -83,34 +79,27 @@ webSocketServer.on('connection', (ws, req) => {
         }
       })
     }
-
-
   })
 
   ws.on('close', () => {
-
     const dltuser = user.filter(v => v.port == ws._socket._peername.port)[0]
     let nick;
     if (dltuser != undefined) {
       nick = dltuser.nick;
     }
-
     const port = ws._socket._peername.port;
     user = user.filter(v => v.port != ws._socket._peername.port)
     webSocketServer.clients.forEach((client) => {
-
-
       client.send(JSON.stringify({ port: port, nick: nick, type: 3 }));
-
     })
-
-
-
   })
-
-
-
-
 })
+
+
+
+
+
+
+
 
 

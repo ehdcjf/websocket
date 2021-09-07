@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+    <div style="display:flex; justify-content: flex-start; width: 1500px; height: auto; overflow: hidden;">
+
+      <ul id='chatBox' style="height:400px; width:400px; list-style: none;">
+        <li id="chatHead" style="display:flex; justify-content: flex-start; align-items: center;"><h1>채팅내용</h1></li>  
+      </ul>
+
+      <ul id='userBox' style="height:400px; width:200px; list-style: none;">
+        <li id="userHead" style="display:flex; justify-content: flex-start; align-items: center;"><h1>유저목록</h1></li>
+      </ul>
+    </div>
+
+
+  <div id="startBox">
+    <span>닉네임:</span>
+    <input type="text" name="" id="nick">
+    <button id="start" onClick='chatStart()'>시작</button>
+    <input type="hidden" name="" id="mynick">
+  </div>
+  
+  <div id='msgBox' style="display: none;">
+    <div id="toAll">
+      <span>모두에게:</span>
+      <input type="text" name="" id="msg">
+      <button id='send' onClick='chatToAll()'>메세지 보내기</button>
+    </div>
+    <div id="toTarget">
+      
+    </div>
+  </div>
+
+
+  
+  <script type="text/javascript">
+    let socket = new WebSocket("ws://localhost:3000");
+    let mynick = ''
+
+    socket.onopen = ()=>{ console.log("웹소켓서버와 연결 성공"); };
+
+    ///채팅시작. 채팅 수신
+    socket.onmessage = (event)=>{
+      const { type, nick,msg,targetNick,targetPort,port,user } = JSON.parse(event.data)
+
+      switch(type){
+
+        case 'SetMyNick':{
+          mynick = nick;
+
+          document.querySelector('#startBox').setAttribute('style','display:none')
+          document.querySelector('#msgBox').setAttribute('style','display:block')
+          const h2 = document.createElement('h2')
+          h2.innerHTML=mynick;
+          document.querySelector('#chatHead').appendChild(h2);
+
+          const li = document.createElement('li')
+          const strong = document.createElement('strong');
+          strong.innerHTML=nick;
+          const span = document.createElement('span');
+          span.innerHTML='님 환영합니다.';
+          li.appendChild(strong)
+          li.appendChild(span)
+          document.querySelector('#chatBox').appendChild(li);
+
+
+
+          const userBox = document.querySelector('#userBox')
+          user.forEach(v=>{
+            const userLi = document.createElement('li')
+            userLi.setAttribute('id',`port${v.port}`)
+            const strong = document.createElement('strong');
+            strong.innerHTML=v.nick;
+            strong.addEventListener('click',()=>{
+              makeTargetForm(`${v.port}`,`${v.nick}`);
+            })
+          userLi.appendChild(strong)
+          userBox.appendChild(userLi);
+          })
+        }
+         
+        break;
+
+        case 'NewJoin':
+          {
+          if(mynick=='')break;
+            const li = document.createElement('li')
+            const strong = document.createElement('strong');
+            strong.innerHTML=nick;
+            strong.addEventListener('click',()=>{
+              makeTargetForm(`${port}`,`${nick}`);
+          })
+          const span = document.createElement('span');
+          span.innerHTML='님이 입장하셨습니다.';
+          li.appendChild(strong)
+          li.appendChild(span)
+          document.querySelector('#chatBox').appendChild(li);
+
+          const userBox = document.querySelector('#userBox')
+          const userLi = document.createElement('li')
+          userLi.setAttribute('id',`port${port}`)
+          const userStrong = document.createElement('strong');
+          userStrong.innerHTML=nick;
+          userStrong.addEventListener('click',()=>{
+            makeTargetForm(`${port}`,`${nick}`);
+          })
+          userLi.appendChild(userStrong)
+          userBox.appendChild(userLi);
+        }
+        break;
+
+        case 'ChatToAll':{
+          if(mynick=='')break;
+        const chat = document.createElement('li');
+        const strong = document.createElement('strong');
+        strong.innerHTML=`${nick} > 모두`;
+        strong.addEventListener('click',()=>{
+          if(nick!=document.querySelector('#nick').value)
+          makeTargetForm(`${port}`,`${nick}`);
+        })
+        const span = document.createElement('span');
+        span.innerHTML=msg;
+        chat.appendChild(strong)
+        chat.appendChild(span)
+        document.querySelector('#chatBox').appendChild(chat);}
+        break; 
+
+      
+        case 'ChatToMan':{
+          const chat = document.createElement('li');
+          const strong = document.createElement('strong');
+          strong.innerHTML=`${nick} > ${targetNick}`;
+          if(nick!=mynick){
+            strong.addEventListener('click',()=>{
+              makeTargetForm(`${port}`,`${nick}`);
+            })
+          }
+          const span = document.createElement('span');
+          span.innerHTML=msg;
+          chat.appendChild(strong)
+          chat.appendChild(span)
+
+          document.querySelector('#chatBox').appendChild(chat);}
+        break;
+
+        case 'EndChat':{
+          const chat = document.createElement('li');
+
+          const strong = document.createElement('strong');
+          strong.innerHTML=`${nick}`;
+          const span = document.createElement('span');
+          span.innerHTML='님이 나갔습니다.';
+          chat.appendChild(strong)
+          chat.appendChild(span)
+          document.querySelector('#chatBox').appendChild(chat);
+
+          const userBox = document.querySelector('#userBox')
+          const dlt = document.querySelector(`#port${port}`)
+          userBox.removeChild(dlt);}
+        break;
+      }
+
+    }
+
+
+    //채팅 시작. 닉네임 설정.
+    function chatStart(){
+      const nick = document.querySelector('#nick').value;
+      if (socket.readyState === socket.OPEN && nick!='') { 
+        socket.send(JSON.stringify({nick:nick, type:'StartChat'})); // 데이터 전송 }
+        }else{
+          alert('소켓 서버 없음')
+        }
+      }
+
+
+
+      ///== 모두에게 메세지 보내기.
+      function chatToAll(){
+        const msg = document.querySelector('#msg').value;
+        if (socket.readyState === socket.OPEN && msg!='') { 
+          socket.send(JSON.stringify({ type:'ChatToAll',nick:mynick, msg:msg})); // 데이터 전송 } 
+          msg.value='';
+        }else{
+          alert('소켓 서버 없음')
+        }
+      }
+
+
+      //////======== 1대1 채팅 폼 만들기  or 바꾸기
+    function makeTargetForm(targetPort,targetNick){
+      if(targetNick==mynick) return false;
+
+        const div = document.querySelector('#toTarget')
+        while(div.firstChild){
+          div.removeChild(div.firstChild)
+        }
+      
+        const span = document.createElement('span')
+        span.innerHTML=`${targetNick}에게`;
+        const input = document.createElement('input')
+        input.className='targetMsg'
+        const cancle = document.createElement('input')
+        cancle.setAttribute('type','button')
+        cancle.setAttribute('value','취소')
+        cancle.addEventListener('click',()=>{
+            while(div.firstChild){
+              div.removeChild(div.firstChild)
+            }
+          })
+
+        const send = document.createElement('input')
+        send.setAttribute('type','button')
+        send.setAttribute('value','보내기')
+        send.addEventListener('click',()=>{chatToMan(`${targetNick}`,`${targetPort}`)})
+        
+        div.appendChild(span)
+        div.appendChild(input)
+        div.appendChild(cancle)
+        div.appendChild(send)
+      
+    }
+      
+    function chatToMan(targetNick,targetPort){
+ 
+      const targetMsg = document.querySelector('.targetMsg').value;
+      if(targetMsg!=''){
+        const nick = document.querySelector('#nick').value;
+          socket.send(JSON.stringify({nick:nick,targetNick:targetNick, msg:targetMsg, targetPort:targetPort, type:'ChatToMan'})); 
+          document.querySelector('.targetMsg').value = ''
+        }
+
+    }
+
+
+
+
+  </script>
+  
+</body>
+</html>
