@@ -3,7 +3,6 @@ const app = express();
 const ws = require('ws')
 const nunjucks = require('nunjucks')
 const bodyParser = require('body-parser');
-const M = require('minimatch');
 const PORT = 3000;
 
 app.set('view engine', 'html')

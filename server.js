@@ -55,7 +55,7 @@ webSocketServer.on('connection', (ws, req) => {
         }
       })
     }
-    else if (type == 1) {
+    else if (type == 1) {//브로드 캐스팅
       console.log(ws._socket._peername)
       webSocketServer.clients.forEach((client) => {
         if (client.readyState === ws.OPEN) {
